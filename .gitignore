@@ -22,7 +22,8 @@ gate note*/
 gate-note/
 gate_note/
 material/
-notes/
+/notes/
+!src/app/notes/
 pyqs/
 backups/
 *.pdf
@@ -59,3 +60,6 @@ blob-report/
 Thumbs.db
 .vscode/
 .idea/
+
+*.tsbuildinfo
+
