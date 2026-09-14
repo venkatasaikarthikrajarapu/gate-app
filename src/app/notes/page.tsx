@@ -14,158 +14,29 @@ import {
   AlertTriangle,
   BookOpen,
   CheckCircle2,
+  Filter,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { DEMO_NOTES, DEMO_FORMULAS, DEMO_TRAPS, Note, Formula, Trap } from '@/lib/notes-data';
 
-interface Note {
-  id: string;
-  subject: string;
-  title: string;
-  content: string;
-  keyPoints: string[];
-  bookmarked: boolean;
-}
-
-interface Formula {
-  id: string;
-  subject: string;
-  name: string;
-  formula: string;
-  explanation: string;
-  example: string;
-}
-
-interface Trap {
-  id: string;
-  subject: string;
-  trap: string;
-  misconception: string;
-  correctApproach: string;
-}
-
-const DEMO_NOTES: Note[] = [
-  {
-    id: 'n1',
-    subject: 'Data Structures',
-    title: 'AVL Tree Self-Balancing Rotations',
-    content: 'An AVL tree is a BST where the difference between heights of left and right subtrees (Balance Factor = hL - hR) cannot be more than 1 for all nodes.',
-    keyPoints: [
-      'LL Rotation: Right rotation at unbalanced node (after insertion in left subtree of left child)',
-      'RR Rotation: Left rotation at unbalanced node (after insertion in right subtree of right child)',
-      'LR Rotation: Left rotate left child, then right rotate unbalanced node',
-      'RL Rotation: Right rotate right child, then left rotate unbalanced node',
-      'Maximum height of AVL tree with n nodes is bounded by 1.44 * log2(n)',
-    ],
-    bookmarked: true,
-  },
-  {
-    id: 'n2',
-    subject: 'Computer Networks',
-    title: 'TCP Connection States & Flow Control',
-    content: 'TCP uses a 3-way handshake for connection establishment (SYN, SYN-ACK, ACK) and 4-way termination (FIN, ACK, FIN, ACK).',
-    keyPoints: [
-      'TIME_WAIT state lasts for 2 * MSL (Maximum Segment Lifetime) to ensure final ACK was received',
-      'Effective Window Size = min(Congestion Window, Receiver Advertised Window)',
-      'Silley Window Syndrome avoidance: Nagle algorithm (sender side), Clark solution (receiver side)',
-    ],
-    bookmarked: false,
-  },
-  {
-    id: 'n3',
-    subject: 'DBMS',
-    title: 'Relational Normalization Criteria',
-    content: 'Normalization eliminates update, deletion, and insertion anomalies by decomposing relations into higher normal forms.',
-    keyPoints: [
-      '1NF: Attributes contain only atomic (indivisible) values',
-      '2NF: 1NF + No partial dependency (no proper subset of candidate key determines non-prime attribute)',
-      '3NF: 2NF + No transitive dependency (for every X -> A, either X is superkey or A is prime attribute)',
-      'BCNF: For every non-trivial FD X -> A, X must be a superkey',
-    ],
-    bookmarked: true,
-  },
-  {
-    id: 'n4',
-    subject: 'Operating Systems',
-    title: 'Coffman Deadlock Conditions & Banker Algorithm',
-    content: 'Deadlock arises when multiple processes compete for limited resources and remain blocked indefinitely.',
-    keyPoints: [
-      'Four simultaneous conditions: Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait',
-      'Resource-Allocation Graph with single instance per type: Cycle is necessary AND sufficient for deadlock',
-      'Multiple instances: Cycle is necessary but NOT sufficient',
-      'Banker algorithm checks safe state: Need = Max - Allocation <= Available',
-    ],
-    bookmarked: false,
-  },
-];
-
-const DEMO_FORMULAS: Formula[] = [
-  {
-    id: 'f1',
-    subject: 'Computer Organization',
-    name: 'Pipelining Speedup Ratio',
-    formula: 'Speedup = (n * k) / (k + n - 1)',
-    explanation: 'Where n = number of instructions and k = number of pipeline stages. As n approaches infinity, maximum speedup = k.',
-    example: 'For k=5 stages and n=100 instructions: Speedup = 500 / 104 = 4.81x',
-  },
-  {
-    id: 'f2',
-    subject: 'Operating Systems',
-    name: 'Effective Memory Access Time (EMAT)',
-    formula: 'EMAT = h * (t_TLB + t_mem) + (1 - h) * (t_TLB + (k + 1) * t_mem)',
-    explanation: 'Where h = TLB hit ratio, t_TLB = TLB access time, t_mem = main memory access time, and k = number of levels in multi-level paging.',
-    example: 'h=0.9, t_TLB=20ns, t_mem=100ns, 1-level paging: EMAT = 0.9*(120) + 0.1*(220) = 130 ns',
-  },
-  {
-    id: 'f3',
-    subject: 'Algorithms',
-    name: "Amdahl's Law for Parallel Speedup",
-    formula: 'Speedup = 1 / (s + (1 - s) / p)',
-    explanation: 'Where s = fraction of code that is strictly serial, and p = number of parallel processors.',
-    example: 's=0.25 (25% serial), p=4 processors: Speedup = 1 / (0.25 + 0.75/4) = 1 / 0.4375 = 2.28x',
-  },
-  {
-    id: 'f4',
-    subject: 'Computer Networks',
-    name: 'Sliding Window Minimum Frame Size',
-    formula: 'Frame_size >= 2 * Bandwidth * Propagation_Delay',
-    explanation: 'To detect collisions in CSMA/CD, transmission time (Tt) must be at least twice the propagation time (Tp): Tt >= 2 * Tp.',
-    example: 'Bandwidth = 10 Mbps, Tp = 25.6 µs: Minimum frame size = 2 * 10^7 * 25.6 * 10^-6 = 512 bits = 64 bytes',
-  },
-];
-
-const DEMO_TRAPS: Trap[] = [
-  {
-    id: 't1',
-    subject: 'Theory of Computation',
-    trap: 'Assuming Closure Properties for Non-Deterministic Languages',
-    misconception: 'Assuming that deterministic and non-deterministic versions always have identical closure properties.',
-    correctApproach: 'Deterministic Context-Free Languages (DCFLs) are CLOSED under complementation, but NOT closed under union or intersection. General CFLs are closed under union, but NOT closed under complement or intersection!',
-  },
-  {
-    id: 't2',
-    subject: 'DBMS',
-    trap: 'SQL NULL Arithmetic and Comparisons',
-    misconception: 'Writing WHERE col = NULL or assuming NULL != 5 includes NULL values.',
-    correctApproach: 'Any arithmetic or comparison with NULL produces UNKNOWN (except IS NULL / IS NOT NULL). In COUNT(column), NULL rows are ignored; in COUNT(*), NULL rows are included.',
-  },
-  {
-    id: 't3',
-    subject: 'Data Structures',
-    trap: 'Binary Search Tree Deletion of 2-Child Node',
-    misconception: 'Replacing node with arbitrary child instead of in-order predecessor/successor.',
-    correctApproach: 'Always replace with in-order predecessor (maximum in left subtree) or in-order successor (minimum in right subtree), then recursively delete that leaf/single-child node.',
-  },
-  {
-    id: 't4',
-    subject: 'Computer Networks',
-    trap: 'Subnet Host Calculation Edge Cases',
-    misconception: 'Forgetting to subtract 2 for network ID and broadcast address.',
-    correctApproach: 'Usable hosts = 2^(32 - prefix) - 2. For /31 and /32 subnets, standard host address formula has special RFC 3021 exceptions, but in GATE always follow standard -2 unless point-to-point link is specified.',
-  },
+const ROADMAP_SUBJECTS = [
+  'All',
+  '#1 PDS',
+  '#2 Algo',
+  '#3 DL',
+  '#4 COA',
+  '#5 CN',
+  '#6 OS',
+  '#7 DBMS',
+  '#8 TOC',
+  '#9 CD',
+  '#10 Maths',
+  '#11 Apti',
 ];
 
 export default function NotesPage() {
   const [activeTab, setActiveTab] = useState<'notes' | 'formulas' | 'traps'>('notes');
+  const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
 
@@ -173,31 +44,40 @@ export default function NotesPage() {
     setFlippedCards((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const matchesSubject = (itemSubject: string) => {
+    if (selectedSubject === 'All') return true;
+    return itemSubject.toLowerCase().includes(selectedSubject.toLowerCase());
+  };
+
   const filteredNotes = DEMO_NOTES.filter(
     (n) =>
-      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.content.toLowerCase().includes(searchQuery.toLowerCase())
+      matchesSubject(n.subject) &&
+      (n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredFormulas = DEMO_FORMULAS.filter(
     (f) =>
-      f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.formula.toLowerCase().includes(searchQuery.toLowerCase())
+      matchesSubject(f.subject) &&
+      (f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.formula.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredTraps = DEMO_TRAPS.filter(
     (t) =>
-      t.trap.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.subject.toLowerCase().includes(searchQuery.toLowerCase())
+      matchesSubject(t.subject) &&
+      (t.trap.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.misconception.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
     <div className="flex-1">
       <Header
-        title="High-Yield Revision Vault"
-        subtitle="Curated short notes, formula flashcard decks, and GATE exam trap rules"
+        title="High-Yield Daily Notes Vault"
+        subtitle="Curated short notes, formula flashcard decks, and GATE exam trap rules across all 11 roadmap subjects"
       />
 
       <main className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
@@ -213,7 +93,7 @@ export default function NotesPage() {
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
-              Short Notes ({DEMO_NOTES.length})
+              Short Notes ({filteredNotes.length})
             </button>
             <button
               onClick={() => setActiveTab('formulas')}
@@ -224,7 +104,7 @@ export default function NotesPage() {
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
-              Formula Flashcards ({DEMO_FORMULAS.length})
+              Formula Flashcards ({filteredFormulas.length})
             </button>
             <button
               onClick={() => setActiveTab('traps')}
@@ -235,7 +115,7 @@ export default function NotesPage() {
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
-              Trap Rules ({DEMO_TRAPS.length})
+              Trap Rules ({filteredTraps.length})
             </button>
           </div>
 
@@ -243,12 +123,33 @@ export default function NotesPage() {
             <Search className="absolute left-3 top-2.5 text-slate-500" size={16} />
             <input
               type="text"
-              placeholder="Search concepts, formulas..."
+              placeholder="Search concepts, formulas, traps..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs md:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
             />
           </div>
+        </div>
+
+        {/* 11-Subject Filter Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800">
+          <span className="text-xs text-slate-500 flex items-center gap-1 mr-1 flex-shrink-0">
+            <Filter size={12} /> Filter:
+          </span>
+          {ROADMAP_SUBJECTS.map((sub) => (
+            <button
+              key={sub}
+              onClick={() => setSelectedSubject(sub)}
+              className={clsx(
+                'px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0',
+                selectedSubject === sub
+                  ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
+                  : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200 hover:border-slate-700'
+              )}
+            >
+              {sub}
+            </button>
+          ))}
         </div>
 
         {/* Tab 1: Short Notes */}
@@ -270,11 +171,11 @@ export default function NotesPage() {
                     <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                       High-Yield Exam Takeaways
                     </p>
-                    <ul className="space-y-1 text-xs text-slate-300">
+                    <ul className="space-y-1.5 text-xs text-slate-300">
                       {note.keyPoints.map((pt, i) => (
                         <li key={i} className="flex items-start gap-2">
                           <CheckCircle2 size={13} className="text-emerald-400 mt-0.5 flex-shrink-0" />
-                          <span>{pt}</span>
+                          <span className="leading-relaxed">{pt}</span>
                         </li>
                       ))}
                     </ul>
@@ -346,8 +247,7 @@ export default function NotesPage() {
             <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300 flex items-center gap-2">
               <AlertTriangle size={16} className="flex-shrink-0" />
               <span>
-                These trap rules are synthesized from the top 100 negative-marked questions in GATE history.
-                Review them before every mock exam!
+                These trap rules are synthesized from the top negative-marked questions in GATE CSE history across all 11 subjects.
               </span>
             </div>
 
@@ -361,12 +261,12 @@ export default function NotesPage() {
                   <h4 className="text-sm font-bold text-slate-100">{trap.trap}</h4>
 
                   <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/80 space-y-1 text-xs">
-                    <p className="text-red-400 font-medium">❌ Frequent Student Blunder:</p>
+                    <p className="text-red-400 font-medium">? Frequent Student Blunder:</p>
                     <p className="text-slate-400">{trap.misconception}</p>
                   </div>
 
                   <div className="bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20 space-y-1 text-xs">
-                    <p className="text-emerald-400 font-medium">✅ The Ironclad Correct Approach:</p>
+                    <p className="text-emerald-400 font-medium">? The Ironclad Correct Approach:</p>
                     <p className="text-slate-300 leading-relaxed">{trap.correctApproach}</p>
                   </div>
                 </Card>

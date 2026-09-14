@@ -20,15 +20,17 @@ import {
 } from 'lucide-react';
 
 const ALL_SUBJECTS = [
-  { id: 'ds', name: 'Data Structures & Algorithms', enabled: true },
-  { id: 'os', name: 'Operating Systems', enabled: true },
-  { id: 'dbms', name: 'Database Management Systems', enabled: true },
-  { id: 'cn', name: 'Computer Networks', enabled: true },
-  { id: 'toc', name: 'Theory of Computation', enabled: true },
-  { id: 'dl', name: 'Digital Logic', enabled: true },
-  { id: 'coa', name: 'Computer Organization & Architecture', enabled: true },
-  { id: 'math', name: 'Engineering Mathematics & Discrete Math', enabled: true },
-  { id: 'apt', name: 'General Aptitude', enabled: true },
+  { id: 'pds',   name: '#1 Programming & Data Structures', enabled: true },
+  { id: 'algo',  name: '#2 Algorithms', enabled: true },
+  { id: 'dl',    name: '#3 Digital Logic', enabled: true },
+  { id: 'coa',   name: '#4 Computer Organization & Architecture', enabled: true },
+  { id: 'cn',    name: '#5 Computer Networks', enabled: true },
+  { id: 'os',    name: '#6 Operating Systems', enabled: true },
+  { id: 'dbms',  name: '#7 Database Management Systems', enabled: true },
+  { id: 'toc',   name: '#8 Theory of Computation', enabled: true },
+  { id: 'cd',    name: '#9 Compiler Design', enabled: true },
+  { id: 'math',  name: '#10 Engineering & Discrete Mathematics', enabled: true },
+  { id: 'apti',  name: '#11 General Aptitude', enabled: true },
 ];
 
 export default function SettingsPage() {
