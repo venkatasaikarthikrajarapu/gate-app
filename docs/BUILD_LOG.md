@@ -159,5 +159,30 @@
   - Authored and verified tests in `tests/unit/revision.spec.ts` (6 tests).
 - **Status:** PASS
 
+## Stage 12: Mock Test Runner, Blueprint Validation & Actual vs Potential Score
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented Mock Test Runner (`src/lib/mocks/runner.ts`):
+    - Official GATE CSE 2027 full blueprint constant: 65Q, 100M, 180min, GA 15M / EngMath 13M / Core 72M.
+    - Blueprint validation enforcing question-count and marks-allocation totals match declared values.
+    - Full mock scoring: MCQ negative (-1/3 or -2/3), MSQ negative (-2/3), NAT zero-negative.
+    - Actual score vs Potential score (what the score would be if wrong/unattempted answers were correct).
+    - Per-section score breakdown with accuracy; dangerous wrong count (high confidence wrong answers).
+    - Timing analysis: fastest/slowest/average time per question per session.
+  - Authored and verified tests in `tests/unit/mocks.spec.ts` (5 tests).
+- **Status:** PASS
+
+## Stage 13: Analytics — Daily/Weekly/Monthly Metrics & Weak-Topic Radar
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented Analytics Engine (`src/lib/analytics/metrics.ts`):
+    - Weekly and monthly rollups: total minutes, accuracy, mastery points gained, study day count.
+    - Effectiveness score = mastery points gained per 10 study hours (D4: actual data only, no fabrication).
+    - Weak-topic radar with priority classification: `critical` (accuracy <40% or mastery <30), `watchlist` (<60%), `stable`.
+    - Time Management Analysis: avg time per correct vs wrong, potential time saved if wrong attempts were faster.
+  - Authored and verified tests in `tests/unit/analytics.spec.ts` (4 tests).
+- **Status:** PASS
+
+
 
 
