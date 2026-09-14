@@ -86,3 +86,18 @@
     - Computes net marks, accuracy, per-type breakdown (MCQ, MSQ, NAT), and prioritized dangerous mistake detection.
   - Authored and verified tests in `tests/unit/grading.spec.ts` (9 tests) and `tests/unit/diagnostic.spec.ts` (3 tests).
 - **Status:** PASS
+## Stage 7: Question Bank Importer, Five-Step Transaction & Type Assessor
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented transactional Five-Step Question Importer (`src/lib/importer/importer.ts`):
+    - Format auto-detection: JSON, CSV, JSONL.
+    - Strict validation enforcing GATE marks (1 or 2), valid question types (MCQ, MSQ, NAT), options >= 2 for MCQ/MSQ.
+    - Enforced PYQ integrity (Directive D2): rejected PYQs lacking verified source or exam year.
+    - Automated routing of unrecognized topics to the dedicated Unmapped Questions Queue.
+    - Distinct row error accounting and non-blocking explanation warnings.
+  - Implemented Question Bank Type Assessor (`src/lib/importer/assessor.ts`):
+    - Conversion between question types (e.g. numeric MCQ to NAT, multi-statement to MSQ).
+    - Full before/after audit trail logging.
+  - Authored `docs/IMPORT_FORMATS.md` with schema specifications and format examples.
+  - Authored and verified tests in `tests/unit/importer.spec.ts` (6 tests).
+- **Status:** PASS
