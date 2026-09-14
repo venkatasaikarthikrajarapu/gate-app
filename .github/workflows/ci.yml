@@ -1,0 +1,54 @@
+﻿name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard against large files (>5MB) and binary leaks
+        run: |
+          echo "Scanning for tracked files > 5MB..."
+          # Allow seed files up to 2MB, reject any file > 5MB
+          LARGE_FILES=$(find . -not -path '*/.*' -type f -size +5M)
+          if [ -n "$LARGE_FILES" ]; then
+            echo "ERROR: Large files detected in git tree:"
+            echo "$LARGE_FILES"
+            exit 1
+          fi
+          echo "No large files detected."
+
+      - name: Check for committed secrets
+        run: |
+          echo "Checking for accidental secrets..."
+          if git log -p -n 5 | grep -E -i "(api[_-]?key|secret[_-]?key|password\s*[:=]\s*['\"][^'\"]{8,}['\"])"; then
+            echo "WARNING: Potential secrets found in recent commits"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Run Test Suite
+        run: pnpm test

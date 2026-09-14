@@ -1,0 +1,61 @@
+﻿# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js build outputs
+.next/
+out/
+dist/
+
+# Environment variables & secrets (Directive D6)
+.env
+.env*.local
+.env.production
+.env.development
+.env.test
+!.env.example
+
+# Storage & Large reference material (Directives D6, D7)
+storage/
+reference-material/
+gate note*/
+gate-note/
+gate_note/
+material/
+notes/
+pyqs/
+backups/
+*.pdf
+*.epub
+*.djvu
+*.zip
+*.tar
+*.gz
+*.7z
+
+# Database & SQLite files
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.db
+*.db-journal
+dev.db
+
+# Logs & Diagnostics
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test & Coverage artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
