@@ -183,6 +183,20 @@
   - Authored and verified tests in `tests/unit/analytics.spec.ts` (4 tests).
 - **Status:** PASS
 
+## Stage 15: Backup & Transactional Restore Engine
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented 5-step transactional restore pipeline (`src/lib/backup/restore.ts`):
+    - Step 1 `dry_run`: validates backup payload integrity and cross-checks manifest entity counts against data.
+    - Step 2 `diff`: computes per-entity new records vs conflicting IDs against live database.
+    - Step 3 `confirm`: user must explicitly acknowledge overwrite policy (`skip` | `overwrite` | `merge_additive`).
+    - Step 4 `transactional`: executes restore with chosen policy; Directive D12 enforced — skip policy never destroys existing historical records.
+    - Step 5 `report`: returns per-entity restored/skipped counts, errors list, and completion timestamp.
+    - Deep-equal round-trip verifier for backup fidelity checks (no data loss in serialise-parse cycle).
+  - Authored and verified tests in `tests/unit/backup.spec.ts` (5 tests).
+- **Status:** PASS
+
+
 
 
 
