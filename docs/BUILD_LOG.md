@@ -131,4 +131,21 @@
   - Authored and verified tests in `tests/unit/mistakes.spec.ts` (4 tests).
 - **Status:** PASS
 
+## Stage 10: Guided Short Notes, Formula Decks & Canonical Edge-Case/Trap Engine
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented Guided Short Notes Engine (`src/lib/decks/notes.ts`):
+    - Strict validation enforcing mandatory reflection fields (`title`, `whatILearned`, `keyConcepts`).
+    - Full markdown export formatting 7 structured reflection sections plus mnemonics/tricks.
+  - Implemented Formula Deck & Recall Engine (`src/lib/decks/formulas.ts`):
+    - KaTeX mathematical notation validation with bracket balance checks.
+    - Plain-text twin generation for instant offline fuzzy searchability.
+    - Formula Recall Mode generating variable prompts and post-reveal recall scoring (1=forgot, 2=partial, 3=perfect).
+  - Implemented Canonical Edge Cases & Trap Rule Engine (`src/lib/decks/traps.ts`):
+    - Fast search across concepts, trap behaviors, and counter-measures.
+    - Topic-specific edge case indexing to prevent recurring boundary misses.
+  - Authored and verified tests in `tests/unit/decks.spec.ts` (7 tests).
+- **Status:** PASS
+
+
 
