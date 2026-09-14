@@ -1,4 +1,4 @@
-﻿# GATE CSE MASTERY — Build & Decision Log
+# GATE CSE MASTERY — Build & Decision Log
 
 ## Stage 1: Repository Inspection, Scaffolding & Git Guards
 - **Date:** 2026-09-14
@@ -101,3 +101,21 @@
   - Authored `docs/IMPORT_FORMATS.md` with schema specifications and format examples.
   - Authored and verified tests in `tests/unit/importer.spec.ts` (6 tests).
 - **Status:** PASS
+
+## Stage 8: Activity Tracking, Planned vs Actual Separation & Sync Engine
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented Planned vs Actual Ledger Reconciliation (`src/lib/activity/ledger.ts`):
+    - Strict Directive D13 enforcement: immutable planned task allocations (`DailyTask.plannedMinutes` never mutated).
+    - Granular delta tracking (`actualMinutes - plannedMinutes`) and reconciliation statuses (`met`, `surplus`, `deficit`).
+  - Implemented Study Session Logging & Event Generation (`src/lib/activity/session.ts`):
+    - Preserves historical backfilling with `effectiveDate` and `occurredAt` tracking.
+    - Generates immutable `PreparationEvent` instances for audit and scheduler consumption.
+  - Implemented Non-Toxic Streak Engine (`src/lib/activity/streak.ts`):
+    - Active preparation threshold: normal days >=45 min or >=1 completed task; emergency days >=30 min floor.
+    - Directive D4 & Section P5 compliant: missed days trigger gentle recovery copy with one-tap redistribution options, never streak-shaming.
+  - Implemented Outbox Replay & Sync Manager (`src/lib/sync/outbox.ts`):
+    - Full client-side mutation outbox replay with idempotency UUID (`clientId`) deduplication (ADR-004).
+  - Authored and verified unit tests in `tests/unit/planned_actual.spec.ts` (3 tests) and `tests/unit/sync.spec.ts` (1 test).
+- **Status:** PASS
+
