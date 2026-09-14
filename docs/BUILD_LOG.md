@@ -70,3 +70,19 @@
     - Pinned topic overrides floating to the top with priority enforcement.
   - All 22 tests passing.
 - **Status:** PASS
+## Stage 6: Daily Diagnostic Engine, Pure Grader & Report Card
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented pure grading engine (`src/lib/grading/evaluator.ts`) shared across diagnostics, practice, and mocks:
+    - MCQ grading with official negative marking: -1/3 for 1-mark, -2/3 for 2-mark.
+    - MSQ all-or-nothing evaluation without partial marks or negative marking.
+    - NAT evaluation supporting exact, range, and relative tolerance (default +/-2%) matches.
+    - Robust NAT input parsing: stripped commas, units ("400 MHz" -> 400), whitespace, negative numbers, and rejection of malformed values.
+  - Implemented Daily Diagnostic Generator (`src/lib/diagnostic/generator.ts`):
+    - 70/20/10 weighting for yesterday's topic, weak/overdue revision, and spaced review.
+    - 7-step fallback chain with global 14-day cooldown enforcement.
+    - Honest shortfall disclosure (Directive D2, J1.5) reporting exact quota shortfall notices without fabricating synthetic questions.
+  - Implemented Post-Diagnostic Report Card (`src/lib/diagnostic/report.ts`):
+    - Computes net marks, accuracy, per-type breakdown (MCQ, MSQ, NAT), and prioritized dangerous mistake detection.
+  - Authored and verified tests in `tests/unit/grading.spec.ts` (9 tests) and `tests/unit/diagnostic.spec.ts` (3 tests).
+- **Status:** PASS
