@@ -37,3 +37,18 @@
     - Curated practice bank: 132 practice questions (36 MCQ, 48 MSQ, 48 NAT), satisfying the >=40 MSQ and >=40 NAT requirement honestly without fake PYQs (D2, R21).
   - Authored and verified `tests/integration/schema.spec.ts` asserting ExamCycle, 12 subjects, quotas, append-only PreparationEvents, TopicLink, and planned vs. actual ledgers.
 - **Status:** PASS
+## Stage 4: Syllabus Management, Versioning, Diff Engine & Historical Mapping
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented pure deterministic Syllabus Diff Engine (`src/lib/syllabus/diff.ts`):
+    - Hybrid Levenshtein and token-set similarity metric with possessive and punctuation normalization.
+    - Accurate classification into ADDED, REMOVED, MODIFIED, and UNCHANGED with field-level diffs.
+    - Enforced non-destructive archival semantics for removed topics (Directive D12).
+  - Implemented Syllabus Impact Analyzer (`src/lib/syllabus/impact.ts`):
+    - Computes net hours delta, required daily study shift, and deadline risk transitions.
+    - Generates human-readable schedule consequence explanations.
+  - Implemented Topic Lineage Mapping (`src/lib/syllabus/lineage.ts`):
+    - Generates `TopicLink` mappings (split, merge, rename) ensuring historical attempts remain anchored to original topics.
+  - Authored `docs/SYLLABUS_DIFF.md` documenting matching rules and lineage specifications.
+  - Authored and verified unit tests in `tests/unit/syllabus.spec.ts` (all green).
+- **Status:** PASS
