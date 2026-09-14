@@ -52,3 +52,21 @@
   - Authored `docs/SYLLABUS_DIFF.md` documenting matching rules and lineage specifications.
   - Authored and verified unit tests in `tests/unit/syllabus.spec.ts` (all green).
 - **Status:** PASS
+## Stage 5: Adaptive Scheduler, Event-Driven Recalculation & Impossibility Triage
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented event trigger router (`src/lib/scheduler/triggers.ts`):
+    - Mapped all 23 PreparationEvent types to deterministic schedule recalibrations.
+    - Generated explainable `ScheduleChangeEvent` summaries linking to triggering domain events.
+  - Formulated full anti-burnout recovery mechanics:
+    - 7-day backlog absorption capped at 1.5x capacity and 10h/day ceiling.
+    - Emergency day 45-minute floor preserving daily streak.
+    - Impossibility triage generator offering concrete Plan A, Plan B, and Plan C options when risk is HIGH/CRITICAL.
+  - Authored comprehensive test suite `tests/unit/scheduler_full.spec.ts`:
+    - Deterministic byte-for-byte reproducibility assertions.
+    - Late start handling without historical fabrication.
+    - Missed day absorption within capacity constraints.
+    - Impossibility triage activation.
+    - Pinned topic overrides floating to the top with priority enforcement.
+  - All 22 tests passing.
+- **Status:** PASS
