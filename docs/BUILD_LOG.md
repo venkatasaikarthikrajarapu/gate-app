@@ -119,3 +119,16 @@
   - Authored and verified unit tests in `tests/unit/planned_actual.spec.ts` (3 tests) and `tests/unit/sync.spec.ts` (1 test).
 - **Status:** PASS
 
+## Stage 9: Mistake Intelligence, Repeat Pattern Quarantine & Confidence Calibration
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented Mistake Classification & Repeat Engine (`src/lib/mistakes/engine.ts`):
+    - Full 9-category taxonomy: `conceptual_gap`, `misread_question`, `calculation_error`, `formula_forgotten`, `unit_conversion_error`, `edge_case_missed`, `time_pressure_rush`, `overconfidence_trap`, `guessing_error`.
+    - Repeat detection rules: repeats (question count >=2 or topic pattern >=3) trigger 1.5x priority weight multiplier, RED revision bucket floor, and quarantine.
+    - Dangerous mistake flagging: detects HIGH confidence wrong answers and overconfidence traps.
+    - Retest & Quarantine clearance: requires 2 consecutive correct attempts to graduate out of quarantine; any relapse resets consecutive count to 0 and multiplies priority by 1.5x (capped at 5.0).
+    - Topic Mistake Pattern Detection: scans topic mistake history; triggers active alerts and tailored remedial actions when identical patterns reach >=3 occurrences.
+  - Authored and verified tests in `tests/unit/mistakes.spec.ts` (4 tests).
+- **Status:** PASS
+
+
