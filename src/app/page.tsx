@@ -102,7 +102,7 @@ export default function DashboardPage() {
     <div className="flex-1">
       <Header
         title="GATE CSE Command Center"
-        subtitle="11-Subject Sequential Mastery · Day-by-Day Study Schedule"
+        subtitle="11-Subject Sequential Mastery ï¿½ Day-by-Day Study Schedule"
         streak={stats.streak}
       />
 
@@ -290,7 +290,7 @@ export default function DashboardPage() {
               <span className="flex items-center gap-1 text-emerald-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Active Stage
               </span>
-              <span className="text-slate-600">·</span>
+              <span className="text-slate-600">ï¿½</span>
               <span className="text-slate-400">Sequential Execution</span>
             </div>
           </div>
