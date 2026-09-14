@@ -155,7 +155,14 @@ export function evaluateQuestionAnswer(input: QuestionGradeInput): QuestionGrade
       natConfig = { answerType: 'exact', value: correctAnswer };
     } else if (typeof correctAnswer === 'string') {
       try {
-        natConfig = JSON.parse(correctAnswer);
+        const parsed = JSON.parse(correctAnswer);
+        if (typeof parsed === 'number') {
+          natConfig = { answerType: 'exact', value: parsed };
+        } else if (typeof parsed === 'object' && parsed !== null) {
+          natConfig = parsed;
+        } else {
+          natConfig = { answerType: 'exact', value: parseFloat(correctAnswer) };
+        }
       } catch {
         natConfig = { answerType: 'exact', value: parseFloat(correctAnswer) };
       }

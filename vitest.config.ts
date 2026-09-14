@@ -1,4 +1,4 @@
-﻿import { defineConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
 import path from "path";
 
 export default defineConfig({
@@ -10,6 +10,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: ["src/lib/**/*.ts"],
+      exclude: ["src/lib/**/types.ts", "**/*.d.ts"],
       thresholds: {
         lines: 60,
         functions: 60,

@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import { evaluateQuestionAnswer, parseNATInput } from "@/lib/grading/evaluator";
 
 describe("Question Grading Engine (Stage 6 & Section J6)", () => {
@@ -100,6 +100,78 @@ describe("Question Grading Engine (Stage 6 & Section J6)", () => {
         userAnswer: "15.0"
       });
       expect(result.isCorrect).toBe(true);
+    });
+
+    it("evaluates unattempted questions with zero marks and negative", () => {
+      const empty = evaluateQuestionAnswer({
+        questionType: "mcq",
+        marks: 1,
+        correctAnswer: "A",
+        userAnswer: ""
+      });
+      expect(empty.marksAwarded).toBe(0);
+      expect(empty.negativeMarks).toBe(0);
+      expect(empty.feedback).toBe("Unattempted");
+
+      const emptyArr = evaluateQuestionAnswer({
+        questionType: "msq",
+        marks: 2,
+        correctAnswer: ["A", "B"],
+        userAnswer: []
+      });
+      expect(emptyArr.marksAwarded).toBe(0);
+      expect(emptyArr.feedback).toBe("Unattempted");
+    });
+
+    it("evaluates MSQ with JSON string format for both correct and user answers", () => {
+      const result = evaluateQuestionAnswer({
+        questionType: "msq",
+        marks: 2,
+        correctAnswer: '["A", "C"]',
+        userAnswer: '["c", "a"]'
+      });
+      expect(result.isCorrect).toBe(true);
+      expect(result.marksAwarded).toBe(2);
+    });
+
+    it("handles unknown question types gracefully", () => {
+      const result = evaluateQuestionAnswer({
+        questionType: "essay" as any,
+        marks: 5,
+        correctAnswer: "foo",
+        userAnswer: "bar"
+      });
+      expect(result.isCorrect).toBe(false);
+      expect(result.errorMessage).toBe("Unknown question type.");
+    });
+
+    it("evaluates NAT with string-based exact numbers and JSON string formats", () => {
+      const natStr = evaluateQuestionAnswer({
+        questionType: "nat",
+        marks: 1,
+        correctAnswer: "42",
+        userAnswer: "42.0"
+      });
+      expect(natStr.isCorrect).toBe(true);
+
+      const natJson = evaluateQuestionAnswer({
+        questionType: "nat",
+        marks: 2,
+        correctAnswer: '{"answerType": "exact", "value": 10}',
+        userAnswer: "10"
+      });
+      expect(natJson.isCorrect).toBe(true);
+
+      expect(parseNATInput(NaN).error).toBe("Input is NaN.");
+      expect(parseNATInput({ foo: "bar" }).error).toBe("Malformed input type.");
+
+      const natNonJsonStr = evaluateQuestionAnswer({
+        questionType: "nat",
+        marks: 1,
+        correctAnswer: "invalid-json-str-50",
+        userAnswer: "50"
+      });
+      expect(natNonJsonStr.isCorrect).toBe(false);
     });
   });
 });
