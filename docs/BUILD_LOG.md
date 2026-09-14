@@ -147,5 +147,17 @@
   - Authored and verified tests in `tests/unit/decks.spec.ts` (7 tests).
 - **Status:** PASS
 
+## Stage 11: Unified Spaced Repetition & Revision Engine
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented Spaced Repetition Engine (`src/lib/revision/engine.ts`):
+    - Fixed stability interval schedule `[1, 3, 7, 14, 30, 60]` days with deterministic advancement rules.
+    - R/Y/G bucket classification: RED (<=1d), YELLOW (<=7d), GREEN (>7d).
+    - Outcome-driven interval transitions: `recalled` advances to next step, `partial` retains current, `forgot` resets to 1-day RED.
+    - Revision urgency scoring combining days overdue, topic exam weight, bucket bonus, and mistake retest bonus.
+    - Phase 3 deck-first rapid revision queue builder: segments into formulas/traps, edge cases, mistake retests, and core concepts.
+  - Authored and verified tests in `tests/unit/revision.spec.ts` (6 tests).
+- **Status:** PASS
+
 
 
