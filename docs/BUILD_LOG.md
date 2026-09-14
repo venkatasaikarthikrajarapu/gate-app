@@ -23,3 +23,17 @@
   - Implemented pure deterministic scheduler engine skeleton in `src/lib/scheduler/types.ts` and `src/lib/scheduler/engine.ts`.
   - Authored and verified 5 unit tests in `tests/unit/scheduler.spec.ts` (all green).
 - **Status:** PASS
+## Stage 3: Complete Database Schema, Migrations & Idempotent Seed
+- **Date:** 2026-09-14
+- **Action:**
+  - Implemented comprehensive `prisma/schema.prisma` modeling 45+ relational entities across 8 core domains.
+  - Configured dual DB profile (PostgreSQL 16 in Docker Compose + SQLite dev.db fallback for zero-barrier local execution).
+  - Executed Prisma client generation and migrated SQLite authoritative database.
+  - Developed and verified idempotent `prisma/seed.ts` script:
+    - Versioned ExamCycle for GATE CSE 2027 (2027-02-06, 180m, 100M, 65Q).
+    - Syllabus Version 1 with all 12 subjects and starter topic trees.
+    - Default user, settings, and weekday availability templates (Mon-Sun).
+    - Canonical Edge Cases (M3) and Trap Rules (M4).
+    - Curated practice bank: 132 practice questions (36 MCQ, 48 MSQ, 48 NAT), satisfying the >=40 MSQ and >=40 NAT requirement honestly without fake PYQs (D2, R21).
+  - Authored and verified `tests/integration/schema.spec.ts` asserting ExamCycle, 12 subjects, quotas, append-only PreparationEvents, TopicLink, and planned vs. actual ledgers.
+- **Status:** PASS

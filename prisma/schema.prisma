@@ -1,0 +1,840 @@
+// Prisma schema for GATE CSE MASTERY (V2)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// Domain 1: User, Exam, Settings & Syllabus Versioning
+// ----------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String?  @unique
+  name         String   @default("Student")
+  passwordHash String?
+  timezone     String   @default("Asia/Kolkata")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  settings          Settings?
+  preparationEvents PreparationEvent[]
+  studySessions     StudySession[]
+  questionAttempts  QuestionAttempt[]
+  mistakes          Mistake[]
+  shortNotes        ShortNote[]
+}
+
+model ExamCycle {
+  id                 String   @id @default(uuid())
+  name               String   // e.g. "GATE CSE 2027"
+  cycleYear          Int      // 2027
+  examDate           String   // YYYY-MM-DD (e.g. 2027-02-06)
+  durationMinutes    Int      @default(180)
+  totalMarks         Int      @default(100)
+  totalQuestions     Int      @default(65)
+  sections           String   // JSON string: { GA: 15, EngMath: 13, Core: 72 }
+  phases             String   // JSON string: array of Phase objects
+  syllabusVersionId  String?
+  status             String   @default("active") // active | archived
+  source             String   @default("verified from official IIT-GATE sources")
+  effectiveFrom      String   @default("2026-08-01")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  exams Exam[]
+}
+
+model Exam {
+  id              String     @id @default(uuid())
+  examCycleId     String
+  name            String
+  examDate        String
+  durationMinutes Int        @default(180)
+  totalMarks      Int        @default(100)
+  totalQuestions  Int        @default(65)
+  sections        String     // JSON
+  questionTypes   String     // JSON: ["MCQ", "MSQ", "NAT"]
+  markingScheme   String     // JSON: MCQ -1/3, -2/3; MSQ no partial; NAT tolerance
+  sourceMetadata  String?
+  effectiveFrom   DateTime   @default(now())
+  effectiveTo     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  examCycle ExamCycle @relation(fields: [examCycleId], references: [id], onDelete: Cascade)
+}
+
+model Settings {
+  id                            String   @id @default(uuid())
+  userId                        String   @unique
+  dailyDiagnosticCount          Int      @default(10)
+  diagnosticTimeLimitMinutes    Int      @default(25)
+  diagnosticSoftBlock           Boolean  @default(true)
+  typeMixTargets                String   @default("{\"mcq\":2,\"msq\":4,\"nat\":4}") // JSON string
+  normalCapacityHoursDefault    Float    @default(6.0)
+  recoveryCapacityMultiplier    Float    @default(1.25)
+  bufferPercent                 Float    @default(15.0)
+  maxDailyHoursCeiling          Float    @default(10.0)
+  revisionIntervalLadder        String   @default("[1,3,7,14,30,60]") // JSON
+  phaseWeights                  String   @default("{\"phase1\":{\"learning\":70,\"practice\":20,\"revision\":10}}") // JSON
+  confidenceTracking            Boolean  @default(true)
+  notifications                 String   @default("{}") // JSON
+  theme                         String   @default("system")
+  lowAvailabilityModes          String   @default("{}") // JSON
+  natDefaultTolerancePercent    Float    @default(2.0)
+  generationEnabled             Boolean  @default(false)
+  optionalAIExtractionEnabled   Boolean  @default(false)
+  featureFlags                  String   @default("{}") // JSON
+  onboardedAt                   DateTime?
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SyllabusVersion {
+  id           String   @id @default(uuid())
+  versionLabel String   // e.g. "GATE CSE Syllabus v1"
+  source       String   @default("Official GATE Syllabus")
+  status       String   @default("active") // draft | review | active | archived
+  activatedAt  DateTime?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subjects Subject[]
+}
+
+model DayType {
+  id           String   @id @default(uuid())
+  date         String   // YYYY-MM-DD
+  mode         String   @default("normal") // full | normal | busy | emergency | holiday | exam
+  plannedHours Float    @default(6.0)
+  actualHours  Float?
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([date])
+}
+
+model AvailabilityTemplate {
+  id         String   @id @default(uuid())
+  weekday    Int      // 0 (Sun) to 6 (Sat)
+  hours      Float
+  label      String   // e.g. "College Day", "Weekend"
+  preference String   @default("both") // morning | evening | both
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([weekday])
+}
+
+// ----------------------------------------------------
+// Domain 2: Syllabus, Subjects, Topics & History Links
+// ----------------------------------------------------
+
+model Subject {
+  id                String   @id @default(uuid())
+  syllabusVersionId String
+  code              String   // e.g. "OS", "ALGO"
+  name              String   // e.g. "Operating Systems"
+  displayOrder      Int
+  marksWeight       Float    @default(8.0)
+  priority          String   @default("high") // low | medium | high
+  color             String   @default("#3b82f6")
+  archivedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  syllabusVersion SyllabusVersion @relation(fields: [syllabusVersionId], references: [id], onDelete: Cascade)
+  topics          Topic[]
+  formulas        Formula[]
+  edgeCases       EdgeCase[]
+  trapRules       TrapRule[]
+  questions       Question[]
+}
+
+model Topic {
+  id                      String   @id @default(uuid())
+  subjectId               String
+  name                    String
+  description             String?
+  displayOrder            Int
+  estimatedHours          Float    @default(6.0)
+  priority                String   @default("medium") // low | medium | high
+  difficulty              String   @default("medium") // easy | medium | hard | very_hard
+  pinned                  Boolean  @default(false)
+  status                  String   @default("not_started") // not_started | learning | practicing | weak | revising | strong | mastered
+  studyCompletionPercent Float    @default(0)
+  masteryScore            Float    @default(0)
+  lastStudiedAt           DateTime?
+  lastRevisedAt           DateTime?
+  nextRevisionDue         String?  // YYYY-MM-DD
+  revisionBucket          Int      @default(1) // 1, 3, 7, 14, 30, 60
+  sourceSyllabusVersionId String?
+  archivedAt              DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  subject           Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subtopics         Subtopic[]
+  mappingKeys       TopicMappingKey[]
+  linksFrom         TopicLink[]         @relation("TopicLinkFrom")
+  linksTo           TopicLink[]         @relation("TopicLinkTo")
+  questions         Question[]
+  topicProgress     TopicProgress[]
+  topicMastery      TopicMastery?
+  shortNotes        ShortNote[]
+  formulas          Formula[]
+  edgeCases         EdgeCase[]
+  trapRules         TrapRule[]
+  revisionRecords   RevisionRecord[]
+  refLinks          ReferenceTopicLink[]
+}
+
+model Subtopic {
+  id                String   @id @default(uuid())
+  topicId           String
+  name              String
+  displayOrder      Int
+  estimatedHours    Float?
+  completionPercent Float    @default(0)
+  status            String   @default("not_started")
+  optional          Boolean  @default(false)
+  archivedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model TopicMappingKey {
+  id            String   @id @default(uuid())
+  topicId       String
+  normalizedKey String
+  aliases       String   // JSON string array of aliases
+  createdAt     DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model TopicLink {
+  id            String   @id @default(uuid())
+  fromTopicId   String
+  toTopicId     String
+  fromVersionId String?
+  toVersionId   String?
+  kind          String   @default("syllabus_mapping") // syllabus_mapping | renamed | split | merged
+  migrationRule String?
+  createdAt     DateTime @default(now())
+
+  fromTopic Topic @relation("TopicLinkFrom", fields: [fromTopicId], references: [id], onDelete: Cascade)
+  toTopic   Topic @relation("TopicLinkTo", fields: [toTopicId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// Domain 3: Questions & Question Attempts
+// ----------------------------------------------------
+
+model Question {
+  id                 String   @id @default(uuid())
+  externalId         String?  // unique per source
+  subjectId          String
+  topicId            String
+  subtopicId         String?
+  sourceType         String   @default("practice") // pyq | practice | generated | demo
+  source             String   // e.g. "GATE 2024 Official" or "Seed — Antigravity curated"
+  year               Int?
+  session            String?
+  marks              Int      @default(1) // 1 | 2
+  questionType       String   // mcq | msq | nat
+  difficulty         String   @default("medium") // easy | medium | hard
+  questionText       String
+  options            String?  // JSON string array for MCQ/MSQ, null for NAT
+  correctAnswer      String   // JSON string: MCQ "A", MSQ ["A","B"], NAT {"value": 12.5, "tolerance": 2}
+  answerType         String?  // exact | range | tolerance (for NAT)
+  explanation        String?
+  concept            String?
+  tags               String   @default("[]") // JSON string array
+  marksScheme        String?
+  explanationMissing Boolean  @default(false)
+  flagged            Boolean  @default(false)
+  demo               Boolean  @default(false)
+  needsTypeTag       Boolean  @default(false)
+  lastServedAt       DateTime?
+  serveCount         Int      @default(0)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  subject       Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topic         Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  attempts      QuestionAttempt[]
+  mistakes      Mistake[]
+  mockQuestions MockQuestion[]
+}
+
+model QuestionAttempt {
+  id              String   @id @default(uuid())
+  questionId      String
+  userId          String
+  context         String   @default("practice") // diagnostic | practice | mock | revision_retest | manual
+  attemptedAt     DateTime @default(now())
+  selectedAnswer  String   // JSON string
+  isCorrect       Boolean
+  timeTakenSeconds Int?
+  confidence      String?  // low | medium | high
+  marksAwarded    Float    @default(0)
+  negativeMarks   Float    @default(0)
+  beforeCorrect   Boolean  @default(false)
+  clientId        String?  // idempotency key
+  diagnosticDate  String?  // YYYY-MM-DD
+  mockResultId    String?
+  createdAt       DateTime @default(now())
+
+  question   Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mistakes   Mistake[]
+  mockResult MockResult? @relation(fields: [mockResultId], references: [id], onDelete: SetNull)
+}
+
+// ----------------------------------------------------
+// Domain 4: Activity, Plan & Ledgers (Planned vs Actual)
+// ----------------------------------------------------
+
+model StudySession {
+  id              String   @id @default(uuid())
+  userId          String
+  date            String   // YYYY-MM-DD
+  startAt         DateTime?
+  endAt           DateTime?
+  plannedMinutes  Int      @default(0)
+  actualMinutes   Int      @default(0)
+  subjectId       String?
+  topicId         String?
+  taskDescription String?
+  source          String   @default("timer") // timer | manual | auto | onboarding_claim
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StudyPlan {
+  id                String   @id @default(uuid())
+  generatedAt       DateTime @default(now())
+  horizonStart      String   // YYYY-MM-DD
+  horizonEnd        String   // YYYY-MM-DD
+  generatedBecause  String?  // ScheduleChangeEvent ID or reason
+  status            String   @default("active") // active | superseded
+  createdAt         DateTime @default(now())
+
+  dailyTasks DailyTask[]
+}
+
+model DailyTask {
+  id                    String   @id @default(uuid())
+  studyPlanId           String
+  date                  String   // YYYY-MM-DD
+  type                  String   // study | practice | revision | diagnostic | mock | mock_analysis | mistake_review | notes | formula | buffer | rest
+  subjectId             String?
+  topicId               String?
+  subtopicId            String?
+  plannedMinutes        Int      @default(0)
+  completedMinutes      Int      @default(0)
+  questionTarget        Int?
+  questionTypeMixTarget String?  // JSON
+  plannedTopic          String?  // denormalized label
+  status                String   @default("pending") // pending | in_progress | completed | partially_completed | skipped | missed
+  orderIndex            Int      @default(1)
+  locked                Boolean  @default(false)
+  note                  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  studyPlan StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+}
+
+model TopicProgress {
+  id                         String   @id @default(uuid())
+  topicId                    String
+  date                       String   // YYYY-MM-DD
+  minutesStudied             Int      @default(0)
+  subtopicsCompletedDelta    Int      @default(0)
+  completionPercentSnapshot Float    @default(0)
+  masterySnapshot            Float    @default(0)
+  source                     String   @default("session") // session | manual | auto | onboarding
+  createdAt                  DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model TopicMastery {
+  id                 String   @id @default(uuid())
+  topicId            String   @unique
+  accuracyOverall    Float    @default(0)
+  accuracyMcq        Float    @default(0)
+  accuracyMsq        Float    @default(0)
+  accuracyNat        Float    @default(0)
+  attemptsCount      Int      @default(0)
+  correctCount       Int      @default(0)
+  pyqAttempted       Int      @default(0)
+  pyqTotal           Int      @default(0)
+  pyqAccuracy        Float    @default(0)
+  retentionScore     Float    @default(0)
+  lastAssessedAt     DateTime?
+  stabilityBucketDays Int     @default(1)
+  status             String   @default("not_started")
+  notes              String?
+  updatedAt          DateTime @updatedAt
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model MissedDay {
+  id                   String   @id @default(uuid())
+  date                 String   // YYYY-MM-DD
+  detectedVia          String   @default("declared") // declared | auto
+  declaredAt           DateTime @default(now())
+  completedTasksCount  Int      @default(0)
+  plannedMinutes       Int      @default(0)
+  reason               String?
+  resolution           String   @default("pending") // pending | absorbed | redistributed | waived | triaged
+  backlogMinutesCarried Int     @default(0)
+  note                 String?
+  createdAt            DateTime @default(now())
+
+  @@unique([date])
+}
+
+model ScheduleChangeEvent {
+  id                 String   @id @default(uuid())
+  at                 DateTime @default(now())
+  trigger            String   // day_rollover | missed_day | availability_change | etc.
+  preparationEventId String?  // Link to triggering PreparationEvent (Part E)
+  summary            String   // Human explanation sentence with numbers
+  details            String?  // JSON
+  planIdBefore       String?
+  planIdAfter        String?
+  affectedTopics     String?  // JSON array
+  capacityChange     Float?
+  riskChange         String?
+  createdAt          DateTime @default(now())
+}
+
+model Override {
+  id         String   @id @default(uuid())
+  date       String?  // YYYY-MM-DD
+  topicId    String?
+  subjectId  String?
+  action     String   // pin_topic | move_topic | lighten_day | focus_subject | skip_revision | custom
+  payload    String?  // JSON
+  reason     String?
+  appliedAt  DateTime @default(now())
+  revertedAt DateTime?
+}
+
+model PreparationEvent {
+  id                String   @id @default(uuid())
+  userId            String
+  occurredAt        DateTime @default(now())
+  effectiveDate     String   // YYYY-MM-DD
+  eventType         String   // study_session, missed_day_declared, etc.
+  source            String   @default("ui_action") // ui_action | onboarding | auto_detect | import | job | api | sync
+  actor             String   @default("student") // student | system | ai_assistant
+  payload           String   // JSON string
+  relatedEntityType String?  // topic | subject | question | plan | etc.
+  relatedEntityId   String?
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// Domain 5: Mistakes, Notes, Decks & Revision
+// ----------------------------------------------------
+
+model Mistake {
+  id                String   @id @default(uuid())
+  questionAttemptId String?
+  userId            String
+  questionId        String
+  topicId           String
+  subjectId         String
+  date              String   // YYYY-MM-DD
+  classification    String   @default("concept_gap") // concept_gap | formula_forgotten | calculation | misread | silly | guessing | time_pressure | confused_concepts | selection_error
+  customExplanation String?  // "Why did I get this wrong?"
+  resolved          Boolean  @default(false)
+  resolvedAt        DateTime?
+  resolutionNote    String?
+  repeatCount       Int      @default(1)
+  isRepeated        Boolean  @default(false)
+  dangerous         Boolean  @default(false) // HIGH confidence + WRONG
+  reviewCount       Int      @default(0)
+  lastReviewedAt    DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  questionAttempt QuestionAttempt? @relation(fields: [questionAttemptId], references: [id], onDelete: SetNull)
+  question        Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MistakePattern {
+  id           String   @id @default(uuid())
+  topicId      String
+  subjectId    String
+  patternText  String   // e.g. "Repeated: Dijkstra NAT"
+  occurrences  Int      @default(1)
+  firstSeenAt  DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+  status       String   @default("active") // active | resolved
+  autoDetected Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
+}
+
+model ShortNote {
+  id                 String   @id @default(uuid())
+  userId             String
+  topicId            String
+  subtopicId         String?
+  subjectId          String
+  title              String
+  whatILearned       String?
+  keyConcepts        String?
+  importantFormulas  String?
+  conditions         String?
+  boundaryConditions String?
+  edgeCases          String?
+  commonTraps        String?
+  pyqInsights        String?
+  myMistakes         String?
+  memoryTrick        String?
+  tags               String   @default("[]") // JSON
+  pinned             Boolean  @default(false)
+  lastReviewedAt     DateTime?
+  reviewCount        Int      @default(0)
+  archivedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Formula {
+  id             String   @id @default(uuid())
+  subjectId      String
+  topicId        String
+  subtopicId     String?
+  name           String
+  latex          String   // KaTeX formula
+  plainText      String   // Search twin
+  variables      String   @default("[]") // JSON: [{ symbol, meaning }]
+  conditions     String?
+  relatedConcept String?
+  commonTrap     String?
+  tags           String   @default("[]") // JSON
+  pinned         Boolean  @default(false)
+  lastReviewedAt DateTime?
+  reviewCount    Int      @default(0)
+  archivedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topic   Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model EdgeCase {
+  id               String   @id @default(uuid())
+  subjectId        String
+  topicId          String
+  title            String
+  description      String
+  expectedBehavior String
+  whyItMatters     String
+  source           String?  @default("Seed")
+  tags             String   @default("[]") // JSON
+  pinned           Boolean  @default(false)
+  lastReviewedAt   DateTime?
+  archivedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topic   Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model TrapRule {
+  id             String   @id @default(uuid())
+  subjectId      String
+  topicId        String
+  concept        String
+  trap           String
+  counterMeasure String
+  example        String?
+  tags           String   @default("[]") // JSON
+  pinned         Boolean  @default(false)
+  lastReviewedAt DateTime?
+  archivedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topic   Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model RevisionRecord {
+  id               String   @id @default(uuid())
+  topicId          String
+  kind             String   @default("topic") // topic | shortnote | formula | edgecase | traprule | mistake_retest
+  refId            String?
+  scheduledAt      String   // YYYY-MM-DD
+  performedAt      DateTime?
+  outcome          String?  // recalled | partial | forgot
+  nextDueAt        String?  // YYYY-MM-DD
+  stabilityDays    Int      @default(1)
+  newStabilityDays Int?
+  createdAt        DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// Domain 6: Mocks & Analytics
+// ----------------------------------------------------
+
+model MockTest {
+  id           String   @id @default(uuid())
+  name         String
+  type         String   @default("full") // full | subject | topic | custom
+  scheduledFor String?  // YYYY-MM-DD
+  status       String   @default("draft") // draft | scheduled | in_progress | completed | abandoned
+  blueprint    String   // JSON: sections, question count, timeLimitMinutes
+  generatedAt  DateTime @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  mockQuestions MockQuestion[]
+  mockResults   MockResult[]
+}
+
+model MockQuestion {
+  id           String   @id @default(uuid())
+  mockTestId   String
+  questionId   String
+  orderIndex   Int
+  section      String   // GA | EngMath | Core
+  marks        Int      @default(1)
+  negativeMark Float    @default(0)
+
+  mockTest MockTest @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model MockResult {
+  id                String   @id @default(uuid())
+  mockTestId        String
+  completedAt       DateTime @default(now())
+  totalQuestions    Int      @default(65)
+  attempted         Int      @default(0)
+  correct           Int      @default(0)
+  wrong             Int      @default(0)
+  unattempted       Int      @default(0)
+  score             Float    @default(0)
+  maxScore          Float    @default(100)
+  accuracy          Float    @default(0)
+  timeTakenMinutes  Float    @default(0)
+  subjectBreakdown  String   // JSON
+  topicBreakdown    String   // JSON
+  typeBreakdown     String   // JSON
+  sectionBreakdown  String   // JSON
+  createdAt         DateTime @default(now())
+
+  mockTest MockTest          @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
+  attempts QuestionAttempt[]
+  analysis MockAnalysis?
+}
+
+model MockAnalysis {
+  id                 String   @id @default(uuid())
+  mockResultId       String   @unique
+  marksLostByCause   String   // JSON: { silly: 6, calculation: 4, concept_gap: 5 }
+  potentialScore     Float
+  actualScore        Float
+  timeAnalysis       String   // JSON: slowest questions, easy skipped
+  dangerousMistakes  String   @default("[]") // JSON
+  conceptGaps        String   @default("[]") // JSON topic IDs
+  summary            String
+  recommendedActions String   // JSON
+  createdAt          DateTime @default(now())
+
+  mockResult MockResult @relation(fields: [mockResultId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsSnapshot {
+  id                 String   @id @default(uuid())
+  date               String   // YYYY-MM-DD
+  minutesPlanned     Int      @default(0)
+  minutesActual      Int      @default(0)
+  questionsAttempted Int      @default(0)
+  correct            Int      @default(0)
+  wrong              Int      @default(0)
+  accuracy           Float    @default(0)
+  diagnosticScore    Float    @default(0)
+  topicsCompleted    Int      @default(0)
+  topicsImproved     Int      @default(0)
+  mistakesLogged     Int      @default(0)
+  mistakesResolved   Int      @default(0)
+  revisionMinutes    Int      @default(0)
+  mockMinutes        Int      @default(0)
+  hoursBySubject     String   @default("{}") // JSON
+  generatedAt        DateTime @default(now())
+
+  @@unique([date])
+}
+
+model StreakState {
+  id             String   @id @default(uuid())
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  daysStudied    Int      @default(0)
+  missedDays     Int      @default(0)
+  lastActiveDate String?  // YYYY-MM-DD
+  updatedAt      DateTime @updatedAt
+}
+
+// ----------------------------------------------------
+// Domain 7: Reference Library & Processing Pipeline
+// ----------------------------------------------------
+
+model ReferenceDocument {
+  id                 String   @id @default(uuid())
+  filename           String
+  originalPath       String
+  docType            String   @default("notes") // notes | pyq | question_bank | book | other
+  mimeType           String   @default("application/pdf")
+  sizeBytes          Int
+  sha256             String
+  uploadedAt         DateTime @default(now())
+  processingStatus   String   @default("uploaded") // uploaded | processing | indexed | ready | failed | needs_review
+  processingError    String?
+  pageCount          Int?
+  extractedCharCount Int?
+  subjectsDetected   String   @default("[]") // JSON
+  topicsDetected     String   @default("[]") // JSON
+  extractionTier     String   @default("tier1_text") // tier1_text | tier1_ocr | tier2_ai_assisted
+  aiAssisted         Boolean  @default(false)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  chunks   ReferenceChunk[]
+  refLinks ReferenceTopicLink[]
+}
+
+model ReferenceChunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  chunkIndex  Int
+  page        Int?
+  headingPath String   @default("[]") // JSON string array
+  content     String
+  tokenCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  document ReferenceDocument   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  links    ReferenceTopicLink[]
+
+  @@unique([documentId, chunkIndex])
+}
+
+model ReferenceTopicLink {
+  id             String   @id @default(uuid())
+  documentId     String
+  chunkId        String?
+  topicId        String
+  confidence     String   @default("high") // manual | high | medium | low
+  method         String   @default("filename_heuristic") // manual | filename_heuristic | heading_heuristic | search_match | ai_assisted
+  confirmedByUser Boolean @default(false)
+  createdAt      DateTime @default(now())
+
+  document ReferenceDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunk    ReferenceChunk?   @relation(fields: [chunkId], references: [id], onDelete: SetNull)
+  topic    Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model ProcessingJob {
+  id              String   @id @default(uuid())
+  type            String   // pdf_extract | chunk_index | topic_link | question_import | syllabus_import | export | import
+  status          String   @default("queued") // queued | running | succeeded | failed
+  payload         String   // JSON
+  attempts        Int      @default(0)
+  maxAttempts     Int      @default(3)
+  lastError       String?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  progressPercent Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ImportBatch {
+  id          String   @id @default(uuid())
+  kind        String   // questions | syllabus | notes | formulas
+  filename    String
+  rowCount    Int      @default(0)
+  validCount  Int      @default(0)
+  errorCount  Int      @default(0)
+  errors      String   @default("[]") // JSON
+  status      String   @default("preview") // validating | preview | committed | failed | partially_committed
+  committedAt DateTime?
+  report      String?  // JSON
+  createdAt   DateTime @default(now())
+}
+
+// ----------------------------------------------------
+// Domain 8: Notifications, Audit & Sync
+// ----------------------------------------------------
+
+model Notification {
+  id           String   @id @default(uuid())
+  category     String   // diagnostic | study | revision | mock | mistake_review | notes | system | phase_change | risk
+  scheduledFor String   // YYYY-MM-DD HH:mm
+  sentAt       DateTime?
+  readAt       DateTime?
+  title        String
+  body         String
+  actionRoute  String?
+  createdAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  entity    String   // Topic | Question | SyllabusVersion | etc.
+  entityId  String
+  action    String   // create | update | delete | activate
+  before    String?  // JSON snapshot
+  after     String?  // JSON snapshot
+  at        DateTime @default(now())
+  source    String   @default("system")
+}
+
+model SyncLog {
+  id        String   @id @default(uuid())
+  clientId  String   @unique
+  entity    String
+  payload   String   // JSON
+  syncedAt  DateTime @default(now())
+  status    String   @default("synced")
+}
